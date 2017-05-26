@@ -22,7 +22,7 @@ spec:
           path: /tmp
       containers:
       - name: controller-manager
-        image: xtoph/hyperkube-amd64:azuredns.11
+        image: xtoph/hyperkube-amd64:azuredns.20
         env:
           - name: POD_NAMESPACE
             valueFrom:
@@ -45,9 +45,9 @@ spec:
           - --dns-provider=azure-azuredns
           - --dns-provider-config=/tmp/clouddns.conf
           - --federation-name=federation
-          - --zone-id=""
+          - --zone-id=
           - --zone-name=$(ZONE_NAME)
-          - --v=5
+          - --v=4
         volumeMounts:
         - name: ssl
           readOnly: true

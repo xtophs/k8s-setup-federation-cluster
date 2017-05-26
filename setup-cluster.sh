@@ -6,21 +6,27 @@
 
 set -e
 
+if [[ $# != 4 ]]; then
+    echo Usage: setup-cluster [azure region] [resource group name] [path to cluster ARM template] [cluster name]
+    exit 1
+fi  
+
 # arguments
 # 1: region
 # 2: rg name 
 # 3: path to cluster ARM templates
+# 4: cluster name
 
-#az group create -l ${1} -g ${2}
+az group create -l ${1} -n ${2}
 
-#az group deployment create --template-file ${3}/azuredeploy.json --parameters @${3}/azuredeploy.parameters.json -g ${2}
+az group deployment create --template-file ${3}/azuredeploy.json --parameters @${3}/azuredeploy.parameters.json -g ${2}
 
 if [ ! -f ~/.ssh/id_rsa ]; then
     echo no private SSH key. Exiting.
     exit 1
 fi
 
-if [ ! -f ./counddns.conf ]; then
+if [ ! -f ./clouddns.conf ]; then
     echo no DNS provider config. Exiting.
     exit 1
 fi
@@ -53,27 +59,29 @@ scp -q ./clouddns.conf $sshTarget:$configPath
 
 echo Copying setup scripts
 scp -q ./setup.sh $sshTarget:$scriptPath
-scp -q ./setup.sh $sshTarget:$rootPath/joincluster.sh
+scp -q ./joincluster.sh $sshTarget:$rootPath/joincluster.sh
 
 echo updating federation controller manager config
 # TODO: use  REGISTRY and VERSION from the k8s build
-scp -q ~/federation-cluster/federation-controller-manager.yaml $sshTarget:$rootPath/kubernetes-cluster-federation/deployments/ 
 
-echo setting up federation
-ssh -q $sshTarget "$rootPath/setup.sh > setup.log 2>&1"
-scp -q $sshTarget:$rootPath/setup.log .
+scp -q ./federation-controller-manager.yaml $sshTarget:$rootPath/kubernetes-cluster-federation/deployments/ 
 
-ok=$(cat setup.log | grep SUCCESS )
+echo to set up federation dp:
+echo ssh -q $sshTarget 
+echo ./setup.sh ${4}
+#scp -q $sshTarget:$rootPath/setup.log .
 
-if [[ -z $ok ]];
-then
-    echo error settin up federation
-    tail setup.log 
-    exit 1 
-if
+#ok=$(cat setup.log | grep SUCCESS )
 
-echo joining cluster federation
-ssh -q $sshTarget "$rootPath/joincluster.sh > joincluster.log 2>&1"
-scp -q $sshTarget:$rootPath/joincluster.log .
+#if [[ -z $ok ]];
+# then
+#     echo error setting up federation
+#     tail setup.log 
+#     exit 1 
+# fi
 
-cat joincluster.log
+#echo joining cluster federation
+#ssh -q $sshTarget "$rootPath/joincluster.sh ${4} > joincluster.log 2>&1"
+#scp -q $sshTarget:$rootPath/joincluster.log .
+
+#cat joincluster.log

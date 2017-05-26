@@ -6,32 +6,40 @@ cd kubernetes-cluster-federation
 
 kubectl config use-context host-cluster
 
-cluster="xtoph16"
+#TODO: Parameter validation
 
+if [ -z $1 ];
+then
+ echo no cluster name. Exiting.
+ exit 1
+fi
 
+cluster=${1}
+
+echo setting up admin user
 kubectl config set-credentials admin --kubeconfig kubeconfigs/${cluster}/kubeconfig
 
 client_key_data=$(cat kubeconfigs/${cluster}/kubeconfig | grep client-key-data | cut -d' ' -f6-)
-
 client_cert_data=$(cat kubeconfigs/${cluster}/kubeconfig | grep client-certificate-data | cut -d' ' -f6-)
-
 server=$(cat kubeconfigs/${cluster}/kubeconfig | grep server | cut -d' ' -f6-)
 
+echo setting client key data
 kubectl config set users.admin.client-key-data \
     ${client_key_data} \
-    --kubeconfig kubeconfigs/${cluster}/kubeconfig
+    --kubeconfig=kubeconfigs/${cluster}/kubeconfig
 
- kubectl config set users.admin.client-certificate-data \
+echo setting client certificate data
+kubectl config set users.admin.client-certificate-data \
     ${client_cert_data} \
-    --kubeconfig kubeconfigs/${cluster}/kubeconfig
+    --kubeconfig=kubeconfigs/${cluster}/kubeconfig
 
-  kubectl config set-context default \
+kubectl config set-context default \
     --cluster=${cluster} \
     --user=admin \
-    --kubeconfig kubeconfigs/${cluster}/kubeconfig
+    --kubeconfig=kubeconfigs/${cluster}/kubeconfig
 
-  kubectl config use-context default \
-    --kubeconfig kubeconfigs/${cluster}/kubeconfig
+kubectl config use-context default \
+    --kubeconfig=kubeconfigs/${cluster}/kubeconfig
     
 cat > clusters/${cluster}.yaml <<EOF
 apiVersion: federation/v1beta1
@@ -45,7 +53,6 @@ spec:
   secretRef:
     name: ${cluster}
 EOF
-
 
 kubectl create secret generic ${cluster} \
     --from-file=kubeconfigs/${cluster}/kubeconfig

@@ -6,19 +6,35 @@
 
 set -e
 
-cluster="xtoph16"
-mkdir clusters
+#TODO: Parameter validation
 
-mkdir -p kubeconfigs
-mkdir -p kubeconfigs/${cluster}
-cp ~/.kube/config kubeconfigs/${cluster}/kubeconfigs
+if [ -z $1 ];
+then
+ echo no cluster name. Exiting.
+ exit 1
+fi
+
+cluster=${1}
 
 cd kubernetes-cluster-federation
+
+mkdir -p clusters
+mkdir -p kubeconfigs
+mkdir -p kubeconfigs/${cluster}
+
+# protecting against 2nd run
+# we want to grab the pristine kubeconfig without any of the federation entries
+if [ ! -f kubeconfigs/${cluster}/kubeconfig ]
+then
+  cp ~/.kube/config kubeconfigs/${cluster}/kubeconfig
+fi 
+
+kubectl config use-context ${cluster}
 
 nodes=$(kubectl get nodes -o jsonpath='{.items[?(@.metadata.labels.role=="agent")].metadata.name}')
 echo found $nodes
 
-cluster=xtoph16
+adminuser=$cluster-admin
 
 for node in $nodes
 do
@@ -28,7 +44,7 @@ done
 echo configuring context
 kubectl config set-context host-cluster \
   --cluster=$cluster \
-  --user=$cluster-admin \
+  --user=${adminuser} \
   --namespace=federation
 
 echo switching context
@@ -110,14 +126,32 @@ kubectl create secret generic federation-apiserver-kubeconfig \
 export DNS_ZONE_NAME=xtophs.com
 
 #has to be empty for Azure DNS
-export DNS_ZONE_ID=""
+export DNS_ZONE_ID=
 
 kubectl create configmap federation-controller-manager \
   --from-literal=zone-id=${DNS_ZONE_ID} \
   --from-literal=zone-name=${DNS_ZONE_NAME}
 
+count=0
+set +e 
+
+while [ $count -lt 20 ]
+do
+    echo waiting for apiserver to get ready $count
+    resp=$(curl -k https://${ip}:443)
+
+    if [ "$resp" == "Unauthorized" ];
+    then
+        break
+    fi 
+    count=$((count + 1))
+done
+
+set -e
+    
 kubectl create -f deployments/federation-controller-manager.yaml
 
+set +e 
 count=0
 while [ $count -lt 20 ]
 do
@@ -132,7 +166,7 @@ do
 done
 
 echo Federation Controller Manager Running
-
+set -e
 kubectl config use-context federation-cluster
 mkdir -p configmaps
 cat > configmaps/kube-dns.yaml <<EOF
@@ -145,9 +179,17 @@ data:
   federations: federation=${DNS_ZONE_NAME}
 EOF
 
-# TODO
-# retry this 
-kubectl create -f configmaps/kube-dns.yaml 
+count=0
+
+set +e
+while [ $count -lt 20 ]
+do 
+  result=$(kubectl create -f configmaps/kube-dns.yaml | grep created)
+  if [ ! -z $result ]; then
+    break
+  fi
+  count=$(( count + 1 ))
+done
 
 echo DNS configmap created
 cat configmaps/kube-dns.yaml
