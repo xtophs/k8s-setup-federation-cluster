@@ -59,7 +59,7 @@ kubectl create secret generic ${cluster} \
 
 kubectl config use-context federation-cluster
 
-kubectl create -f clusters/
+kubectl create -f clusters/${cluster}.yaml
 
 kubectl get clusters
 

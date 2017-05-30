@@ -47,7 +47,7 @@ spec:
           - --federation-name=federation
           - --zone-id=
           - --zone-name=$(ZONE_NAME)
-          - --v=4
+          - --v=5
         volumeMounts:
         - name: ssl
           readOnly: true

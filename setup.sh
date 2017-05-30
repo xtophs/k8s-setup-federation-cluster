@@ -185,7 +185,7 @@ set +e
 while [ $count -lt 20 ]
 do 
   result=$(kubectl create -f configmaps/kube-dns.yaml | grep created)
-  if [ ! -z $result ]; then
+  if [ -n $result ]; then
     break
   fi
   count=$(( count + 1 ))
