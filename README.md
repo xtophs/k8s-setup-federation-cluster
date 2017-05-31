@@ -17,7 +17,7 @@ Make note of `appId`, `password` and `tenant`. Those will need to go into the pr
 
 ## Federation Host Cluster
 1. Setup a kubernetes cluster. The scripts assume you created an ARM templates using [acs-engine](https://github.com/Azure/acs-engine). `setup-cluster.sh` will create a resource group and then deploy the ARM template.  
-2. Build a hyperkube running your DNS federation provider. You can clone the kubernetes repo, add your code, set `REGISTRY` and `VERSION` environment variables and then build the hyperkube by running `./hack/dev-push-hyperkube.sh`
+2. (optional) Build a hyperkube running your DNS federation provider. You can clone the kubernetes repo, add your code, set `REGISTRY` and `VERSION` environment variables and then build the hyperkube by running `./hack/dev-push-hyperkube.sh`
 3. Edit the `clouddns.conf` file in this folder with the configuration for your resource group and your service principal
 ```
 [Global]
@@ -27,13 +27,17 @@ client-id =
 secret = 
 resourceGroup = 
 ```
-4. Run `setup-cluster.sh` with those parameters:
+4. If you built your own hyperkube, update repo and version for the hyperkube image in  `federation-controller-manager.yaml` 
+```
+image: REPOSITORY/hyperkube-amd64:azuredns.VERSION
+```
+5. Run `setup-cluster.sh` with those parameters:
 - location
 - resource group name
 - path to the ARM template 
-5. ssh to the master and run `setup.sh [clustername]` with the cluster name (the dnsPrefix in the acs-engine API model) as the parameter
-6. Still on the master, run `joincluster.sh [clustername]`, also with the cluster name as parameter
-7. Deploy the ReplicaSet
+6. ssh to the master and run `setup.sh [clustername]` with the cluster name (the dnsPrefix in the acs-engine API model) as the parameter
+7. Still on the master, run `joincluster.sh [clustername]`, also with the cluster name as parameter
+8. Deploy the ReplicaSet
 - `kubectl create -f rs/nginx.yaml`
 - Change the service file `services/nginx.yaml` to type `LoadBalancer`
 - `kubectl create -f services/nginx.yaml`
