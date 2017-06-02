@@ -38,6 +38,7 @@ adminuser=$cluster-admin
 
 for node in $nodes
 do
+  ssh-keyscan $node >> ~/.ssh/known_hosts
   scp -q ./clouddns.conf $node:/tmp/clouddns.conf
 done
 

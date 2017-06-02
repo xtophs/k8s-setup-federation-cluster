@@ -49,6 +49,8 @@ keyPath=$rootPath/.ssh/id_rsa
 configPath=$rootPath/kubernetes-cluster-federation/clouddns.conf
 scriptPath=$rootPath/setup.sh
 
+ssh-keyscan $ipAddress >> ~/.ssh/known_hosts
+
 echo copying SSH private key
 scp -q ~/.ssh/id_rsa $sshTarget:$keyPath
 ssh -q $sshTarget 'sudo chmod 400 '$keyPath
@@ -66,9 +68,17 @@ echo updating federation controller manager config
 
 scp -q ./federation-controller-manager.yaml $sshTarget:$rootPath/kubernetes-cluster-federation/deployments/ 
 
-echo to set up federation dp:
+echo to set up federation do:
 echo ssh -q $sshTarget 
-echo ./setup.sh ${4}
+echo "./setup.sh ${4} > setup.log 2>&1 &" 
+echo "./joincluster.sh ${4}  > joincluster.log 2>&1 &" 
+echo
+echo 
+echo to join existing cluster 
+echo ssh to where your federation contoller is running, then
+echo mkdir -p kubernetes-cluster-federation/kubeconfigs/${4}
+echo scp $ipAddress:/home/azureuser/.kube/config kubernetes-cluster-federation/kubeconfigs/${4}/kubeconfigs
+echo ./joincluster ${4}
 #scp -q $sshTarget:$rootPath/setup.log .
 
 #ok=$(cat setup.log | grep SUCCESS )
