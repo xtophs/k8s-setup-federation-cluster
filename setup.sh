@@ -38,6 +38,7 @@ adminuser=$cluster-admin
 
 for node in $nodes
 do
+  ssh-keyscan $node >> ~/.ssh/known_hosts
   scp -q ./clouddns.conf $node:/tmp/clouddns.conf
 done
 
@@ -185,7 +186,7 @@ set +e
 while [ $count -lt 20 ]
 do 
   result=$(kubectl create -f configmaps/kube-dns.yaml | grep created)
-  if [ -n $result ]; then
+  if [[ -n $result ]]; then
     break
   fi
   count=$(( count + 1 ))

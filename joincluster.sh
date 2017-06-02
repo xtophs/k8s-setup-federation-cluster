@@ -63,4 +63,8 @@ kubectl create -f clusters/${cluster}.yaml
 
 kubectl get clusters
 
+echo SUCCESS
+
+echo kubectl get clusters 
+
 
