@@ -6,8 +6,8 @@
 
 set -e
 
-if [[ $# != 4 ]]; then
-    echo Usage: setup-cluster [azure region] [resource group name] [path to cluster ARM template] [cluster name]
+if [[ $# != 5 ]]; then
+    echo Usage: setup-cluster [azure region] [resource group name] [path to cluster ARM template] [cluster name] [zoneName]
     exit 1
 fi  
 
@@ -26,7 +26,10 @@ if [ ! -f ~/.ssh/id_rsa ]; then
     exit 1
 fi
 
-if [ ! -f ./clouddns.conf ]; then
+
+confFile=dns.conf
+
+if [ ! -f ./$confFile ]; then
     echo no DNS provider config. Exiting.
     exit 1
 fi
@@ -46,7 +49,7 @@ echo Address is $ipAddress
 sshTarget=azureuser@$ipAddress
 rootPath=/home/azureuser
 keyPath=$rootPath/.ssh/id_rsa
-configPath=$rootPath/kubernetes-cluster-federation/clouddns.conf
+configPath=$rootPath/kubernetes-cluster-federation/${confFile}
 scriptPath=$rootPath/setup.sh
 
 ssh-keyscan $ipAddress >> ~/.ssh/known_hosts
@@ -57,7 +60,7 @@ ssh -q $sshTarget 'sudo chmod 400 '$keyPath
 
 echo Cloning Repo
 ssh -q $sshTarget "git clone https://github.com/kelseyhightower/kubernetes-cluster-federation.git"
-scp -q ./clouddns.conf $sshTarget:$configPath
+scp -q ./${confFile} $sshTarget:$configPath
 
 echo Copying setup scripts
 scp -q ./setup.sh $sshTarget:$scriptPath
@@ -70,15 +73,15 @@ scp -q ./federation-controller-manager.yaml $sshTarget:$rootPath/kubernetes-clus
 
 echo to set up federation do:
 echo ssh -q $sshTarget 
-echo "./setup.sh ${4} > setup.log 2>&1 &" 
+echo "./setup.sh ${4} ${5} > setup.log 2>&1 &" 
 echo "./joincluster.sh ${4}  > joincluster.log 2>&1 &" 
 echo
 echo 
 echo to join existing cluster 
 echo ssh to where your federation contoller is running, then
 echo mkdir -p kubernetes-cluster-federation/kubeconfigs/${4}
-echo scp $ipAddress:/home/azureuser/.kube/config kubernetes-cluster-federation/kubeconfigs/${4}/kubeconfigs
-echo ./joincluster ${4}
+echo scp $ipAddress:/home/azureuser/.kube/config kubernetes-cluster-federation/kubeconfigs/${4}/kubeconfig
+echo ./joincluster.sh ${4}
 #scp -q $sshTarget:$rootPath/setup.log .
 
 #ok=$(cat setup.log | grep SUCCESS )

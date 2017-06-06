@@ -17,9 +17,9 @@ spec:
       - name: ssl
         hostPath:
           path: /etc/ssl
-      - name: tmp
-        hostPath:
-          path: /tmp
+      - name: config
+        secret:
+          secretName: federation-controller-manager-dnsprovider-config
       containers:
       - name: controller-manager
         image: xtoph/hyperkube-amd64:azuredns.20
@@ -43,7 +43,7 @@ spec:
           - federation-controller-manager
           - --master=https://federation-apiserver:443
           - --dns-provider=azure-azuredns
-          - --dns-provider-config=/tmp/clouddns.conf
+          - --dns-provider-config=/etc/config/dnsconf
           - --federation-name=federation
           - --zone-id=
           - --zone-name=$(ZONE_NAME)
@@ -52,11 +52,12 @@ spec:
         - name: ssl
           readOnly: true
           mountPath: /etc/ssl
-        - name: tmp
+        - name: config
           readOnly: true
-          mountPath: /tmp
+          mountPath: /etc/config/dnsconf
         ports:
           - containerPort: 443
             name: https
           - containerPort: 8080
-            name: local
+            name: local       
+      

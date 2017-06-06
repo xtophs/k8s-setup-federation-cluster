@@ -6,13 +6,10 @@
 
 set -e
 
-#TODO: Parameter validation
-
-if [ -z $1 ];
-then
- echo no cluster name. Exiting.
- exit 1
-fi
+if [[ $# != 2 ]]; then
+    echo Usage: setup.sh [cluster name] [zoneName]
+    exit 1
+fi  
 
 cluster=${1}
 
@@ -36,12 +33,6 @@ echo found $nodes
 
 adminuser=$cluster-admin
 
-for node in $nodes
-do
-  ssh-keyscan $node >> ~/.ssh/known_hosts
-  scp -q ./clouddns.conf $node:/tmp/clouddns.conf
-done
-
 echo configuring context
 kubectl config set-context host-cluster \
   --cluster=$cluster \
@@ -62,9 +53,11 @@ FEDERATION_TOKEN=$(head -c 16 /dev/urandom | od -An -t x | tr -d ' ')
 cat > known-tokens.csv <<EOF
 ${FEDERATION_TOKEN},admin,admin
 EOF
-
 kubectl create secret generic federation-apiserver-secrets \
   --from-file=known-tokens.csv
+
+kubectl create secret generic federation-controller-manager-dnsprovider-config \
+  --from-file=./dns.conf
 
 echo creating persistent volume
 kubectl create -f pvc/federation-apiserver-etcd.yaml
@@ -123,8 +116,11 @@ kubectl config use-context host-cluster
 kubectl create secret generic federation-apiserver-kubeconfig \
   --from-file=kubeconfigs/federation-apiserver/kubeconfig
 
+kubectl create secret generic federation-controller-mamanger-dnsprovider-config \
+  --from-file=known-tokens.csv
+
 # should be a parameter
-export DNS_ZONE_NAME=xtophs.com
+export DNS_ZONE_NAME=${2}
 
 #has to be empty for Azure DNS
 export DNS_ZONE_ID=
