@@ -1,0 +1,63 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: federation-controller-manager
+  namespace: federation
+  labels:
+    app: federated-cluster
+spec:
+  template:
+    metadata:
+      name: federation-controller-manager
+      labels:
+        app: federated-cluster
+        module: federation-controller-manager
+    spec:
+      volumes:
+      - name: ssl
+        hostPath:
+          path: /etc/ssl
+      - name: config
+        secret:
+          secretName: federation-controller-manager-dnsprovider-config
+      containers:
+      - name: controller-manager
+        image: xtoph/hyperkube-amd64:azuredns.20
+        env:
+          - name: POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          - name: ZONE_ID
+            valueFrom:
+              configMapKeyRef:
+                name: federation-controller-manager
+                key: zone-id
+          - name: ZONE_NAME
+            valueFrom:
+              configMapKeyRef:
+                name: federation-controller-manager
+                key: zone-name
+        args:
+          - /hyperkube
+          - federation-controller-manager
+          - --master=https://federation-apiserver:443
+          - --dns-provider=azure-azuredns
+          - --dns-provider-config=/etc/config/dnsconf
+          - --federation-name=federation
+          - --zone-id=
+          - --zone-name=$(ZONE_NAME)
+          - --v=5
+        volumeMounts:
+        - name: ssl
+          readOnly: true
+          mountPath: /etc/ssl
+        - name: config
+          readOnly: true
+          mountPath: /etc/config/dnsconf
+        ports:
+          - containerPort: 443
+            name: https
+          - containerPort: 8080
+            name: local       
+      
