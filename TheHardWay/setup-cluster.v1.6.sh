@@ -50,7 +50,7 @@ sshTarget=azureuser@$ipAddress
 rootPath=/home/azureuser
 keyPath=$rootPath/.ssh/id_rsa
 configPath=$rootPath/kubernetes-cluster-federation/${confFile}
-scriptPath=$rootPath/setup-fedhost.sh
+scriptPath=$rootPath/setup.sh
 
 ssh-keyscan $ipAddress >> ~/.ssh/known_hosts
 
@@ -58,18 +58,43 @@ echo copying SSH private key
 scp -q ~/.ssh/id_rsa $sshTarget:$keyPath
 ssh -q $sshTarget 'sudo chmod 400 '$keyPath
 
-echo Copying setup scripts
-configPath=$rootPath/${confFile}
-
+echo Cloning Repo
+ssh -q $sshTarget "git clone https://github.com/kelseyhightower/kubernetes-cluster-federation.git"
 scp -q ./${confFile} $sshTarget:$configPath
-scp ./setup-fedhost.sh $sshTarget:$scriptPath
+
+echo Copying setup scripts
+scp -q ./setup.sh $sshTarget:$scriptPath
+scp -q ./joincluster.sh $sshTarget:$rootPath/joincluster.sh
+
+echo updating federation controller manager config
+# TODO: use  REGISTRY and VERSION from the k8s build
+
+scp -q ./federation-controller-manager.yaml $sshTarget:$rootPath/kubernetes-cluster-federation/deployments/ 
 
 echo to set up federation do:
-echo ssh $sshTarget 
-echo "./setup-fedhost.sh ${4} ${5} > setup.log 2>&1 &" 
+echo ssh -q $sshTarget 
+echo "./setup.sh ${4} ${5} > setup.log 2>&1 &" 
+echo "./joincluster.sh ${4}  > joincluster.log 2>&1 &" 
 echo
-echo to JOIN Existing Federation 
+echo 
+echo to join existing cluster 
 echo ssh to where your federation contoller is running, then
-echo scp $ipAddress:/home/azureuser/.kube/config ~/.kube/config.${cluster}
-echo export KUBECONFIG=$KUBECONFIG:~/.kube/config.${cluster}
-echo kubefed join ...
+echo mkdir -p kubernetes-cluster-federation/kubeconfigs/${4}
+echo scp $ipAddress:/home/azureuser/.kube/config kubernetes-cluster-federation/kubeconfigs/${4}/kubeconfig
+echo ./joincluster.sh ${4}
+#scp -q $sshTarget:$rootPath/setup.log .
+
+#ok=$(cat setup.log | grep SUCCESS )
+
+#if [[ -z $ok ]];
+# then
+#     echo error setting up federation
+#     tail setup.log 
+#     exit 1 
+# fi
+
+#echo joining cluster federation
+#ssh -q $sshTarget "$rootPath/joincluster.sh ${4} > joincluster.log 2>&1"
+#scp -q $sshTarget:$rootPath/joincluster.log .
+
+#cat joincluster.log
