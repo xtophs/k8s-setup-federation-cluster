@@ -1,5 +1,4 @@
 #!/bin/bash
-
 #
 # setupcluster.sh
 #
@@ -35,7 +34,7 @@ if [ ! -f ./$confFile ]; then
 fi
 
 
-if [ ! -f ./setup.sh ]; then
+if [ ! -f ./setup-fedhost.sh ]; then
     echo no federation setup script. Exiting.
     exit 1
 fi
@@ -55,14 +54,17 @@ scriptPath=$rootPath/setup-fedhost.sh
 ssh-keyscan $ipAddress >> ~/.ssh/known_hosts
 
 echo copying SSH private key
-scp -q ~/.ssh/id_rsa $sshTarget:$keyPath
-ssh -q $sshTarget 'sudo chmod 400 '$keyPath
+scp ~/.ssh/id_rsa $sshTarget:$keyPath
+ssh $sshTarget 'sudo chmod 400 '$keyPath
 
 echo Copying setup scripts
 configPath=$rootPath/${confFile}
 
-scp -q ./${confFile} $sshTarget:$configPath
+scp ./${confFile} $sshTarget:$configPath
 scp ./setup-fedhost.sh $sshTarget:$scriptPath
+
+#ssh $sshTarget "./setup-fedhost.sh ${4} ${5} > setup.1.log 2>&1"
+#ssh $sshTarget "sudo reboot"
 
 echo to set up federation do:
 echo ssh $sshTarget 
