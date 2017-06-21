@@ -1,5 +1,10 @@
 # Kubernetes Federation on Azure
 
+## Disclaimer
+Kubernetes calls Federation [not very mature](https://kubernetes.io/docs/concepts/cluster-administration/federation/#caveats). See known issues below.
+
+## Overview 
+
 Kubernetes Federation provides, among others, 2 benefits as depicted in the diagram below. 
 1.	An administrator can manage multiple, possibly geo-distributed, clusters through a single control plane.
 2.	Service consumers can discover services running in these distributed clusters using standard DNS name resolution
