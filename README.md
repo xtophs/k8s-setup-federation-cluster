@@ -1,4 +1,4 @@
-#Kubernetes Federation on Azure
+# Kubernetes Federation on Azure
 
 Kubernetes Federation provides, among others, 2 benefits as depicted in the diagram below. 
 1.	An administrator can manage multiple, possibly geo-distributed, clusters through a single control plane.
@@ -75,7 +75,12 @@ resourceGroup = fed-dns-rg
 ``` 
 
 ### Deploy a Federation Host Cluster (can be automated by running [setup-fedhost.sh](setup-fedhost.sh) on the master)
-Setup a kubernetes 1.6+ cluster. Until kubernetes 1.6 is supported by ACS, you can create an ARM templates using [acs-engine](https://github.com/Azure/acs-engine). 
+Setup a kubernetes 1.6+ cluster from the CLI
+```
+az group create -l westus -n acs-rg
+az acs create --orchestrator-type kubernetes -n my-k8s-host-cluster -g acs-rg
+```
+or create your custom ARM template using [acs-engine](https://github.com/Azure/acs-engine).
 
 ### Connect to the Federation Host Cluster
 1. Get the IP address of the master load balancer
@@ -94,7 +99,7 @@ ssh azureuser@${ipAddress}
 ### Prepare to use kubefed (currently needed to avoid errors):
 1. Create a Permissive Cluster Role binding
 ```
-$ kubectl create clusterrolebinding permissive-binding   --clusterrole=cluster-admin   --user=client   --group=system:serviceaccounts
+$ kubectl create clusterrolebinding permissive-binding   --clusterrole=cluster-admin   --user=client --user=kubeconfig   --group=system:serviceaccounts
 clusterrolebinding "permissive-binding" created
 ```
 

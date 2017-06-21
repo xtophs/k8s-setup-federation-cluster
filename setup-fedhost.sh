@@ -40,7 +40,7 @@ if [ ! -f kubernetes-client-linux-amd64.tar.gz ]; then
 fi
 
 wd=$(pwd)
-kubefed init ${fedName} --dns-provider="azure-azuredns" --dns-zone-name=${2} --dns-provider-config=${wd}/dns.conf --image=xtoph/hyperkube-amd64:azuredns.20 --controllermanager-arg-overrides="--v=5"
+kubefed init ${fedName} --dns-provider="azure-azuredns" --dns-zone-name=${2} --dns-provider-config=${wd}/dns.conf --image=xtoph/hyperkube-amd64:xtoph.azuredns.16 --controllermanager-arg-overrides="--v=5"
 
 # double check
 ns=$(kubectl get namespace --context=myfederation)
