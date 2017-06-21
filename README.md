@@ -310,8 +310,10 @@ and you'll see additional DNS records to include the service in the 2nd cluster
 ![a-recs](images/fed-a-records.png)
 ## Known Issues
 1. Deleting the Service does not work reliably or it does not clean up CNAME records. Appears to be a federation bug since it's happening with other DNS providers as well
-2. Cluster fail-over detection takes ~17 minutes. Appears to be unrelated to the DNS provider. Still investigating.
+2. ~~Cluster fail-over detection takes ~17 minutes. Appears to be unrelated to the DNS provider. Still investigating.~~
 3. Sometimes kubefed doesn't seem to create the cluster secret. As a result, the cluster will never enter a `Ready` state (typically happens in < 1minute). You'll find that the `federation-controller-manager` pod keeps crashing due to a memory fault and the cluster Work around is to `unjoin` and `join` the cluster the to federation.
+4. Cluster failure does not cause DNS records to be adjusted. (Not Azure specific)
+5. ReplicaSets do not get cleaned up on clusters unjoining a federation (Not Azure specific)
 
 
 
